@@ -5,7 +5,7 @@ import { fileUploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponses } from "../utils/ApiResponses.js";
 import  jwt  from "jsonwebtoken";
 
-// generateAccessAndRefreshTokens
+// generateAccessAndRefreshTokens for generating the tokens 
   const generateAccessAndRefreshTokens = async (user_Id) => {
     try {
       const user = await User.findById(user_Id);
@@ -259,6 +259,59 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
+// for changing the current password 
+const changeCurrentPassword = asyncHandler(async (req,res) => {
+  // taking passwords from body
+  const { oldPassword, newPassword, confirmPassword } = req.body
+
+  // just check for new and confirm passwords are equal or not - can be handled in front end
+  if (!(newPassword === confirmPassword)) {
+    throw new ApiErrors(400,"new password must match with the confirm password ")
+  }
+
+  // finding user in databse by id
+  const user = await User.findById(req.user?._id)
+  if (!user) {
+    throw new ApiErrors(400, "old user not found for chamging the current password")
+  }
+  // if user is then checking for the correct old password 
+   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+  if (!isPasswordCorrect) {
+     throw new ApiErrors(400, "invalid or incorrect old password ")
+  }
+  // if old password is correct or found then let the new password change - pre save from bcrypt in user model will modify it again and hashed
+  user.password = newPassword
+  // saving the new password in db 
+  await user.save({validateBeforeSave:false})
+ //  sendinig response 
+  return res
+    .status(200)
+    .json(
+      new ApiResponses(
+        200,
+        {},
+        "new password changed successfully "
+      )
+    )
+
+})
 
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+
+
+
+
+
+
+
+
+
+
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+};

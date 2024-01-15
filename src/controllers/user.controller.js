@@ -5,6 +5,9 @@ import { fileUploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponses } from "../utils/ApiResponses.js";
 import  jwt  from "jsonwebtoken";
 
+
+
+
 // generateAccessAndRefreshTokens for generating the tokens 
   const generateAccessAndRefreshTokens = async (user_Id) => {
     try {
@@ -297,11 +300,131 @@ const changeCurrentPassword = asyncHandler(async (req,res) => {
 })
 
 
+// get the current user in ui
+const getCurrentUser = asyncHandler( async(req,res) => {
+   // returning the response if user is there
+  return res
+    .status(200)
+    .json(new ApiResponses(
+      200,
+      req.user,
+      "current user fetched or loged in on his account"))
+  
+  
+
+})
+
+
+// updating user's account details
+const updateUserAccoutDetails = asyncHandler(async (req,res) => {
+  // get details from body to update
+  const { fullName, email, password, username,avatar, } = req.body
+  // check for the details are given by the body is there or not - they're require 
+  if (!(fullName && email)) {
+    throw new ApiErrors(400, "email and fullname is requiered for updation ")
+  }
+  // find the user in db for the details updation on the basis of provided details
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    // from mongodb set operator which updates set fields -
+    {
+      $set: {
+        fullName,   // es6 syntax no need pair
+        email:email, // old syntax key value pair
+         }
+    },
+    // this new give updated information after saving in db
+    {new:true}
+  
+  ).select("-password")   // this selects the unrequired fields
+   
+
+  // returning updated user details which updated by user 
+  return res
+    .status(200)
+    .json(new ApiResponses( 200 , user, "new details updated successfully by the user"))
 
 
 
 
 
+})
+
+
+// update image files avatar - use multer middleware before file upload, only multer can upload files  
+const updateAvatarImage = asyncHandler(async (req, res) => {
+  // taking file's local path from multer  - also u can save this localy 
+  const avatarLocalPath = req.file?.path
+  //check file is there or not
+  if (!avatarLocalPath) {
+    throw new ApiErrors(400, "avatar file is missing please check for the file uploaded for update or not")
+  }
+  // if file is then upload it on cloudinary 
+  const avatar = await fileUploadOnCloudinary(avatarLocalPath)
+  
+  // check for after file uploaded on cloudinary, then file url
+  if (avatar.url) {
+    throw new ApiErrors(400, "file is not uploaded on cloudinary while updating - unsuccessful upload")
+  }
+
+  // if avatar url then update in db
+  const user = await User.findByIdAndUpdate(
+    res.user?._id,
+    {
+      $set: { avatar: avatar.url }, // this should be match with db names
+    },
+    { new: true }
+  );
+
+  // if avatar is updated in db successfully then return it to user - in ui
+  return res
+    .status(200)
+    .json(new ApiResponses(200, user, " avatar image successfully uploaded and updated "))
+
+});
+
+
+// updating cover image 
+const updateCoverImage = asyncHandler( async(req,res) => {
+  // 1
+  const coverImageLocalPath = req.user?._id
+  // 2
+  if (!coverImageLocalPath) {
+    throw new ApiErrors(400, "coverImage file is missing please check for the file uploaded for update or not");
+  }
+  // 3
+  const coverImage = await fileUploadOnCloudinary(coverImageLocalPath);
+
+  // 4
+  if (coverImage.url) {
+    throw new ApiErrors(
+      400,
+      "file is not uploaded on cloudinary while updating - unsuccessful upload"
+    );
+  }
+  
+// 5
+  const user = await User.findByIdAndUpdate(
+    res.user?._id,
+    {
+      // this should be match with db names
+      $set: { coverImage: coverImage.url },
+    },
+    { new: true }
+  );
+
+// 6
+  return res
+    .status(200)
+    .json(
+      new ApiResponses(
+        200,
+        user,
+        " avatar image successfully uploaded and updated "
+      )
+    );
+
+})
 
 
 
@@ -314,4 +437,8 @@ export {
   logoutUser,
   refreshAccessToken,
   changeCurrentPassword,
+  getCurrentUser,
+  updateUserAccoutDetails,
+  updateAvatarImage,
+  updateCoverImage,
 };

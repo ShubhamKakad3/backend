@@ -1,7 +1,9 @@
-import dotenv from 'dotenv'    // conf required 
+// main running file
+
+import dotenv from 'dotenv'    // conf required
 import connectDB from './db/index.js'
 import app from './app.js'
-dotenv.config({path:'./env'})
+dotenv.config({path:'./env'})  // app will get env first while running
 
 
 // database function call

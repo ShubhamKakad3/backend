@@ -30,7 +30,7 @@ import mongoose from "mongoose";
   };
 
 
-// register user
+// register user 
 const registerUser = asyncHandler(async (req, res) => {
   // logic steps to work
   // get the user details from frontend
@@ -190,7 +190,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {refreshToken:undefined}
+            $unset: {refreshToken:1}
         },
         {
             new:true
@@ -240,7 +240,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       }
       
       // get tokens
-      const {refreshToken,accessToken } = await generateAccessAndRefreshTokens(user._id)
+      const {newrefreshToken,accessToken } = await generateAccessAndRefreshTokens(user._id)
        
       const options = {
           httpOnly: true,
@@ -250,11 +250,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newRefreshToken, options)
+        .cookie("refreshToken",newrefreshToken, options)
         .json(
           new ApiResponses(
             200,
-            { accessToken, refreshToken: newRefreshToken },
+            { accessToken, refreshToken: newrefreshToken },
             "access token refreshed successfully"
           )
         );
@@ -283,7 +283,7 @@ const changeCurrentPassword = asyncHandler(async (req,res) => {
   if (!isPasswordCorrect) {
      throw new ApiErrors(400, "invalid or incorrect old password ")
   }
-  // if old password is correct or found then let the new password change - pre save from bcrypt in user model will modify it again and hashed
+  // if old password is correct or found then let the new password change/add - pre save from bcrypt in user model will modify it again and hashed
   user.password = newPassword
   // saving the new password in db 
   await user.save({validateBeforeSave:false})
@@ -496,7 +496,7 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
         isSubscribed: 1,
         avatar: 1,
         coverImage: 1,
-        createAt: 1,
+        createdAt: 1,
       },
     },
   ]);
@@ -518,7 +518,7 @@ const getUserChannelProfile = asyncHandler( async(req,res) => {
 
 
 // for the user's watch history - also mongodb aggregation pipline 
-const getUserWatchHistory = asyncHandler(async () => {
+const getUserWatchHistory = asyncHandler(async (req,res) => {
 
   const user = await User.aggregate([
     {

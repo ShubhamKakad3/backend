@@ -11,7 +11,7 @@
         this.errors = errors
         this .success = false
         if (stack) {
-            this.stack =stack
+            this.stack = stack
         } else {
             Error.captureStackTrace(this, this.constuctor);
         }

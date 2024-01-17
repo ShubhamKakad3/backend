@@ -49,7 +49,7 @@ router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"),updateAv
 router.route("/update-coverImage").patch(verifyJWT,upload.single("coverImage"),updateCoverImage)
 
 // user channel profile from params 
-router.route("/channel/:username").get(verifyJWT,getUserChannelProfile)
+router.route("/c/:username").get(verifyJWT,getUserChannelProfile)
 
 // user's watch history
 router.route("/watch-history").get(verifyJWT,getUserWatchHistory)
